@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">xuemeixue</string>
+    <string name="teacher">教师</string>
+    <string name="student">学生</string>
+    <string name="email_hint">邮箱</string>
+    <string name="class_code_hint">班级码（教师不用填）</string>
+    <string name="login_button_text">进入课堂</string>
+    <string name="teacher_id_hint">教师工号</string>
+    <string name="student_id_hint">学号</string>
+    <string name="password_hint">密码</string>
+</resources>
