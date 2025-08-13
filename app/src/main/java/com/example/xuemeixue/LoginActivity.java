@@ -12,6 +12,8 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import java.io.IOException;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import okhttp3.Call;
 import okhttp3.Callback;
@@ -19,8 +21,6 @@ import okhttp3.FormBody;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 public class LoginActivity extends AppCompatActivity {
 
@@ -59,11 +59,9 @@ public class LoginActivity extends AppCompatActivity {
             }
         });
 
-        // 登录按钮点击事件
         btnLogin.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // 获取用户输入
                 String role = (roleGroup.getCheckedRadioButtonId() == R.id.btnTeacher) ? "teacher" : "student";
                 String id = role.equals("teacher") ?
                         etTeacherId.getText().toString() :
