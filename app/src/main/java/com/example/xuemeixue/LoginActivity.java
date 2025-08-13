@@ -19,6 +19,8 @@ import okhttp3.FormBody;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 public class LoginActivity extends AppCompatActivity {
 
@@ -26,20 +28,20 @@ public class LoginActivity extends AppCompatActivity {
     private EditText etStudentId;
     private EditText etPassword;
     private EditText etClassCode;
+    private RadioGroup roleGroup;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
-        RadioGroup roleGroup = findViewById(R.id.roleGroup);
+        roleGroup = findViewById(R.id.roleGroup);
         etTeacherId = findViewById(R.id.etTeacherId);
         etStudentId = findViewById(R.id.etStudentId);
         etPassword = findViewById(R.id.etPassword);
         etClassCode = findViewById(R.id.etClassCode);
         Button btnLogin = findViewById(R.id.btnLogin);
 
-        // 角色选择切换逻辑
         roleGroup.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(RadioGroup group, int checkedId) {
@@ -85,9 +87,8 @@ public class LoginActivity extends AppCompatActivity {
                         .add("classCode", classCode)
                         .build();
 
-                // 注意：localhost在模拟器中应改为10.0.2.2，真机需用电脑实际IP
                 Request request = new Request.Builder()
-                        .url("http://10.0.2.2:8848/api/test/login")
+                        .url(AppConstants.LOGIN_URL)
                         .post(formBody)
                         .build();
 
@@ -103,14 +104,31 @@ public class LoginActivity extends AppCompatActivity {
                     public void onResponse(Call call, Response response) throws IOException {
                         if (response.isSuccessful()) {
                             String responseData = response.body().string();
-                            runOnUiThread(() -> {
-                                Toast.makeText(LoginActivity.this, "登录请求已提交", Toast.LENGTH_SHORT).show();
-                                // 保存登录状态并跳转
-                                saveLoginStatusAndJump(role, id, classCode);
-                            });
+                            try {
+                                JSONObject jsonObject = new JSONObject(responseData);
+                                boolean success = jsonObject.getBoolean("success");
+                                if (success) {
+                                    final String token = jsonObject.getString("token");
+                                    runOnUiThread(() -> {
+                                        Toast.makeText(LoginActivity.this, "登入成功", Toast.LENGTH_SHORT).show();
+                                        // TODO: 保存 token 到 SharedPreferences
+                                        saveLoginStatusAndJump(role, id, classCode);
+                                    });
+                                } else {
+                                    final String errorMessage = jsonObject.getString("message");
+                                    runOnUiThread(() ->
+                                            Toast.makeText(LoginActivity.this, "登入失敗: " + errorMessage, Toast.LENGTH_SHORT).show()
+                                    );
+                                }
+                            } catch (JSONException e) {
+                                e.printStackTrace();
+                                runOnUiThread(() ->
+                                        Toast.makeText(LoginActivity.this, "解析響應失敗", Toast.LENGTH_SHORT).show()
+                                );
+                            }
                         } else {
                             runOnUiThread(() ->
-                                    Toast.makeText(LoginActivity.this, "登录失败: " + response.message(), Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(LoginActivity.this, "登入失败: " + response.message(), Toast.LENGTH_SHORT).show()
                             );
                         }
                     }
