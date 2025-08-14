@@ -33,6 +33,7 @@ dependencies {
     implementation("com.google.android.material:material:1.10.0")
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
     implementation(libs.activity)
+    implementation(libs.androidx.junit)
     androidTestImplementation(libs.junit.junit)
 
     // CameraX（纯Java实现）
