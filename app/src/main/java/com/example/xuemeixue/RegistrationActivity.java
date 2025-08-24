@@ -54,7 +54,8 @@ public class RegistrationActivity extends AppCompatActivity {
         tvStatus = findViewById(R.id.tvStatus);
 
         btnTakePhoto.setOnClickListener(v -> {
-            Intent intent = new Intent(RegistrationActivity.this, CameraActivity.class);
+            // 呼叫為註冊功能設計的專用相機頁面
+            Intent intent = new Intent(RegistrationActivity.this, RegistrationCameraActivity.class);
             startActivityForResult(intent, REQUEST_CODE_CAMERA);
         });
 
@@ -78,17 +79,17 @@ public class RegistrationActivity extends AppCompatActivity {
         if (requestCode == REQUEST_CODE_CAMERA && resultCode == RESULT_OK && data != null) {
             photoPath = data.getStringExtra("photo_path");
             if (photoPath != null) {
-                tvStatus.setText("照片已拍摄，可以注册了。");
+                tvStatus.setText("照片已拍攝，可以註冊了。");
                 tvStatus.setTextColor(getResources().getColor(android.R.color.holo_green_dark));
             } else {
-                Toast.makeText(this, "无法获取照片路径，请重试", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "無法獲取照片路徑，請重試", Toast.LENGTH_SHORT).show();
             }
         }
     }
 
     private void registerStudent(String studentNumber, String studentName, String password, String photoPath) {
         progressBar.setVisibility(View.VISIBLE);
-        tvStatus.setText("正在注册...");
+        tvStatus.setText("正在註冊...");
         btnRegister.setEnabled(false);
 
         OkHttpClient client = new OkHttpClient();
@@ -104,7 +105,7 @@ public class RegistrationActivity extends AppCompatActivity {
                 .build();
 
         Request request = new Request.Builder()
-                .url(AppConstants.BASE_URL + "/register") // 假設後端註冊接口是 /register
+                .url(AppConstants.REGISTER_URL)
                 .post(requestBody)
                 .build();
 
@@ -114,7 +115,7 @@ public class RegistrationActivity extends AppCompatActivity {
                 runOnUiThread(() -> {
                     progressBar.setVisibility(View.GONE);
                     btnRegister.setEnabled(true);
-                    tvStatus.setText("注册失败: " + e.getMessage());
+                    tvStatus.setText("註冊失敗: " + e.getMessage());
                     tvStatus.setTextColor(getResources().getColor(android.R.color.holo_red_dark));
                 });
                 Log.e(TAG, "Registration failed: " + e.getMessage());
@@ -130,13 +131,11 @@ public class RegistrationActivity extends AppCompatActivity {
                         JSONObject jsonObject = new JSONObject(responseBody);
                         String status = jsonObject.getString("status");
                         if ("success".equals(status)) {
-                            tvStatus.setText("注册成功！请返回登录页面");
+                            tvStatus.setText("註冊成功！請返回登入頁面");
                             tvStatus.setTextColor(getResources().getColor(android.R.color.holo_green_dark));
-                            Toast.makeText(RegistrationActivity.this, "注册成功！", Toast.LENGTH_LONG).show();
-                            // 註冊成功後可以考慮自動跳轉
-                            // finish();
+                            Toast.makeText(RegistrationActivity.this, "註冊成功！", Toast.LENGTH_LONG).show();
                         } else {
-                            tvStatus.setText("注册失败: " + jsonObject.getString("message"));
+                            tvStatus.setText("註冊失敗: " + jsonObject.getString("message"));
                             tvStatus.setTextColor(getResources().getColor(android.R.color.holo_red_dark));
                         }
                     } catch (JSONException e) {
