@@ -42,6 +42,9 @@ public class LoginActivity extends AppCompatActivity {
         etClassCode = findViewById(R.id.etClassCode);
         Button btnLogin = findViewById(R.id.btnLogin);
 
+        // 新增的注册按钮
+        Button btnRegisterLink = findViewById(R.id.btnRegisterLink);
+
         roleGroup.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(RadioGroup group, int checkedId) {
@@ -132,6 +135,12 @@ public class LoginActivity extends AppCompatActivity {
                     }
                 });
             }
+        });
+
+        // 为新添加的注册按钮设置点击事件
+        btnRegisterLink.setOnClickListener(v -> {
+            Intent intent = new Intent(LoginActivity.this, RegistrationActivity.class);
+            startActivity(intent);
         });
     }
 
