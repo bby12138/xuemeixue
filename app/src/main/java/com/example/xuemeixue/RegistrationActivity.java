@@ -127,21 +127,32 @@ public class RegistrationActivity extends AppCompatActivity {
                 runOnUiThread(() -> {
                     progressBar.setVisibility(View.GONE);
                     btnRegister.setEnabled(true);
-                    try {
-                        JSONObject jsonObject = new JSONObject(responseBody);
-                        String status = jsonObject.getString("status");
-                        if ("success".equals(status)) {
-                            tvStatus.setText("註冊成功！請返回登入頁面");
-                            tvStatus.setTextColor(getResources().getColor(android.R.color.holo_green_dark));
-                            Toast.makeText(RegistrationActivity.this, "註冊成功！", Toast.LENGTH_LONG).show();
-                        } else {
-                            tvStatus.setText("註冊失敗: " + jsonObject.getString("message"));
+
+                    if (response.isSuccessful()) {
+                        try {
+                            JSONObject jsonObject = new JSONObject(responseBody);
+
+                            boolean success = jsonObject.getBoolean("success");
+                            if (success) {
+                                tvStatus.setText("註冊成功！請返回登入頁面");
+                                tvStatus.setTextColor(getResources().getColor(android.R.color.holo_green_dark));
+                                Toast.makeText(RegistrationActivity.this, "註冊成功！", Toast.LENGTH_LONG).show();
+                            } else {
+                                // 如果 'success' 是 false，則獲取錯誤訊息
+                                String errorMessage = jsonObject.optString("message", "未知錯誤");
+                                tvStatus.setText("註冊失敗: " + errorMessage);
+                                tvStatus.setTextColor(getResources().getColor(android.R.color.holo_red_dark));
+                            }
+                        } catch (JSONException e) {
+                            // 如果後端沒有回傳 'success' 鍵，會拋出此異常
+                            tvStatus.setText("解析響應失敗，後端回傳格式不正確。");
                             tvStatus.setTextColor(getResources().getColor(android.R.color.holo_red_dark));
+                            Log.e(TAG, "JSON parsing error: " + e.getMessage());
                         }
-                    } catch (JSONException e) {
-                        tvStatus.setText("解析響應失敗: " + e.getMessage());
+                    } else {
+                        // 處理 HTTP 狀態碼非 200 的情況
+                        tvStatus.setText("註冊失敗: " + response.message());
                         tvStatus.setTextColor(getResources().getColor(android.R.color.holo_red_dark));
-                        Log.e(TAG, "JSON parsing error: " + e.getMessage());
                     }
                 });
             }
