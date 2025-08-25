@@ -46,40 +46,24 @@
     </RadioGroup>
 
     <EditText
-        android:id="@+id/etEmail"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="@string/email_hint"
-        android:inputType="textEmailAddress"
-        android:autofillHints="@string/email_hint"
-        android:padding="16dp"
-        android:background="@drawable/edit_text_background"
-        android:layout_marginBottom="16dp"
-        android:textSize="16sp"
-        android:textColor="@android:color/black" />
-
-    <EditText
         android:id="@+id/etTeacherId"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:hint="@string/teacher_id_hint"
-        android:visibility="gone"
         android:inputType="text"
-        android:autofillHints="@string/teacher_id_hint"
         android:padding="16dp"
         android:background="@drawable/edit_text_background"
         android:layout_marginBottom="16dp"
         android:textSize="16sp"
-        android:textColor="@android:color/black" />
+        android:textColor="@android:color/black"
+        android:visibility="gone" />
 
     <EditText
         android:id="@+id/etStudentId"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:hint="@string/student_id_hint"
-        android:visibility="gone"
         android:inputType="text"
-        android:autofillHints="@string/student_id_hint"
         android:padding="16dp"
         android:background="@drawable/edit_text_background"
         android:layout_marginBottom="16dp"
@@ -92,27 +76,11 @@
         android:layout_height="wrap_content"
         android:hint="@string/password_hint"
         android:inputType="textPassword"
-        android:visibility="gone"
-        android:autofillHints="@string/password_hint"
-        android:padding="16dp"
-        android:background="@drawable/edit_text_background"
-        android:layout_marginBottom="16dp"
-        android:textSize="16sp"
-        android:textColor="@android:color/black" />
-
-    <EditText
-        android:id="@+id/etClassCode"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="@string/class_code_hint"
-        android:visibility="gone"
-        android:inputType="number"
-        android:autofillHints="@string/class_code_hint"
         android:padding="16dp"
         android:background="@drawable/edit_text_background"
         android:layout_marginBottom="24dp"
-        android:textSize="16sp"
-        android:textColor="@android:color/black" />
+        android:textSize="20sp"
+        android:textColor="@android:color/white" />
 
     <Button
         android:id="@+id/btnLogin"
@@ -122,19 +90,17 @@
         android:background="@drawable/button_background"
         android:textSize="20sp"
         android:textColor="@android:color/white"
-        android:onClick="login"
         android:padding="16dp" />
 
     <Button
         android:id="@+id/btnRegisterLink"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="注册账号"
-        android:background="@drawable/button_background"
         style="@style/Widget.AppCompat.Button.Borderless.Colored"
+        android:layout_width="match_parent"
+        android:layout_height="64dp"
         android:layout_marginTop="16dp"
-        android:textColor="@android:color/white"
+        android:background="@drawable/button_background"
         android:textSize="20sp"
-        android:padding="16dp" />
+        android:text="注册账号"
+        android:textColor="@android:color/white" />
 
 </LinearLayout>

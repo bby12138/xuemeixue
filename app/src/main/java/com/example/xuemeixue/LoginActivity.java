@@ -3,6 +3,7 @@ package com.example.xuemeixue;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -27,7 +28,6 @@ public class LoginActivity extends AppCompatActivity {
     private EditText etTeacherId;
     private EditText etStudentId;
     private EditText etPassword;
-    private EditText etClassCode;
     private RadioGroup roleGroup;
 
     @Override
@@ -39,7 +39,6 @@ public class LoginActivity extends AppCompatActivity {
         etTeacherId = findViewById(R.id.etTeacherId);
         etStudentId = findViewById(R.id.etStudentId);
         etPassword = findViewById(R.id.etPassword);
-        etClassCode = findViewById(R.id.etClassCode);
         Button btnLogin = findViewById(R.id.btnLogin);
 
         // 新增的注册按钮
@@ -51,12 +50,10 @@ public class LoginActivity extends AppCompatActivity {
                 if (checkedId == R.id.btnTeacher) {
                     etTeacherId.setVisibility(View.VISIBLE);
                     etStudentId.setVisibility(View.GONE);
-                    etClassCode.setVisibility(View.GONE);
                     etPassword.setVisibility(View.VISIBLE);
                 } else if (checkedId == R.id.btnStudent) {
                     etTeacherId.setVisibility(View.GONE);
                     etStudentId.setVisibility(View.VISIBLE);
-                    etClassCode.setVisibility(View.VISIBLE);
                     etPassword.setVisibility(View.VISIBLE);
                 }
             }
@@ -70,34 +67,29 @@ public class LoginActivity extends AppCompatActivity {
                         etTeacherId.getText().toString() :
                         etStudentId.getText().toString();
                 String password = etPassword.getText().toString();
-                String classCode = role.equals("student") ? etClassCode.getText().toString() : "";
 
-                // 简单验证
-                if (id.isEmpty() || password.isEmpty() || (role.equals("student") && classCode.isEmpty())) {
-                    Toast.makeText(LoginActivity.this, "请填写完整信息", Toast.LENGTH_SHORT).show();
+                if (id.isEmpty() || password.isEmpty()) {
+                    Toast.makeText(LoginActivity.this, "請填寫完整信息", Toast.LENGTH_SHORT).show();
                     return;
                 }
 
-                // 发送网络请求
                 OkHttpClient client = new OkHttpClient();
-                // 构建请求体
-                FormBody formBody = new FormBody.Builder()
-                        .add("role", role)
-                        .add("id", id)
-                        .add("password", password)
-                        .add("classCode", classCode)
-                        .build();
+                FormBody.Builder formBuilder = new FormBody.Builder();
+
+                // 學生和教師登入都只傳送 username 和 password
+                formBuilder.add("username", id)
+                        .add("password", password);
 
                 Request request = new Request.Builder()
                         .url(AppConstants.LOGIN_URL)
-                        .post(formBody)
+                        .post(formBuilder.build())
                         .build();
 
                 client.newCall(request).enqueue(new Callback() {
                     @Override
                     public void onFailure(Call call, IOException e) {
                         runOnUiThread(() ->
-                                Toast.makeText(LoginActivity.this, "网络请求失败: " + e.getMessage(), Toast.LENGTH_SHORT).show()
+                                Toast.makeText(LoginActivity.this, "網絡請求失敗: " + e.getMessage(), Toast.LENGTH_SHORT).show()
                         );
                     }
 
@@ -112,8 +104,16 @@ public class LoginActivity extends AppCompatActivity {
                                     final String token = jsonObject.getString("token");
                                     runOnUiThread(() -> {
                                         Toast.makeText(LoginActivity.this, "登入成功", Toast.LENGTH_SHORT).show();
-                                        // TODO: 保存 token 到 SharedPreferences
-                                        saveLoginStatusAndJump(role, id, classCode);
+
+                                        SharedPreferences sharedPreferences = getSharedPreferences("login_status", MODE_PRIVATE);
+                                        SharedPreferences.Editor editor = sharedPreferences.edit();
+                                        editor.putBoolean("is_logged_in", true);
+                                        editor.putString("role", role);
+                                        editor.putString("id", id);
+                                        editor.putString("token", token);
+                                        editor.apply();
+
+                                        saveLoginStatusAndJump(role, id);
                                     });
                                 } else {
                                     final String errorMessage = jsonObject.getString("message");
@@ -144,22 +144,10 @@ public class LoginActivity extends AppCompatActivity {
         });
     }
 
-    // 注意：这个方法应该定义在onCreate方法外面，作为类的成员方法
-    private void saveLoginStatusAndJump(String role, String id, String classCode) {
-        SharedPreferences sharedPreferences = getSharedPreferences("login_status", MODE_PRIVATE);
-        SharedPreferences.Editor editor = sharedPreferences.edit();
-        editor.putBoolean("is_logged_in", true);
-        editor.putString("role", role);
-        editor.apply();
-
+    private void saveLoginStatusAndJump(String role, String id) {
         Intent intent = new Intent(LoginActivity.this, ClassActivity.class);
         intent.putExtra("isTeacher", role.equals("teacher"));
-        if (role.equals("teacher")) {
-            intent.putExtra("teacherId", id);
-        } else {
-            intent.putExtra("studentId", id);
-            intent.putExtra("classCode", classCode);
-        }
+        intent.putExtra("id", id);
         startActivity(intent);
         finish();
     }
