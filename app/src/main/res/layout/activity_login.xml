@@ -78,9 +78,22 @@
         android:inputType="textPassword"
         android:padding="16dp"
         android:background="@drawable/edit_text_background"
+        android:layout_marginBottom="16dp"
+        android:textSize="16sp"
+        android:textColor="@android:color/black" />
+
+    <EditText
+        android:id="@+id/etClassCode"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="班级代碼"
+        android:inputType="text"
+        android:padding="16dp"
+        android:background="@drawable/edit_text_background"
         android:layout_marginBottom="24dp"
-        android:textSize="20sp"
-        android:textColor="@android:color/white" />
+        android:textSize="16sp"
+        android:textColor="@android:color/black"
+        android:visibility="gone"/>
 
     <Button
         android:id="@+id/btnLogin"
@@ -96,7 +109,7 @@
         android:id="@+id/btnRegisterLink"
         style="@style/Widget.AppCompat.Button.Borderless.Colored"
         android:layout_width="match_parent"
-        android:layout_height="64dp"
+        android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
         android:background="@drawable/button_background"
         android:textSize="20sp"

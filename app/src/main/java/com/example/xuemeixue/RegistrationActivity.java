@@ -1,5 +1,6 @@
 package com.example.xuemeixue;
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
@@ -34,13 +35,15 @@ public class RegistrationActivity extends AppCompatActivity {
     private static final int REQUEST_CODE_CAMERA = 1;
     private static final String TAG = "RegistrationActivity";
 
-    private EditText etStudentNumber, etStudentName, etPassword;
+    // 新增: 班級代碼輸入欄位
+    private EditText etStudentNumber, etStudentName, etPassword, etClassCode;
     private Button btnRegister, btnTakePhoto;
     private ProgressBar progressBar;
     private TextView tvStatus;
     private RadioGroup roleGroup;
     private String photoPath;
 
+    @SuppressLint("MissingInflatedId")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -54,6 +57,8 @@ public class RegistrationActivity extends AppCompatActivity {
         progressBar = findViewById(R.id.progressBar);
         tvStatus = findViewById(R.id.tvStatus);
         roleGroup = findViewById(R.id.roleGroupRegistration);
+        // 新增: 初始化班级代碼输入框
+        etClassCode = findViewById(R.id.etClassCode);
 
         roleGroup.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
             @Override
@@ -61,9 +66,13 @@ public class RegistrationActivity extends AppCompatActivity {
                 if (checkedId == R.id.btnStudentRegistration) {
                     btnTakePhoto.setVisibility(View.VISIBLE);
                     tvStatus.setVisibility(View.VISIBLE);
+                    // 新增: 学生角色才显示班级代碼输入框
+                    etClassCode.setVisibility(View.VISIBLE);
                 } else if (checkedId == R.id.btnTeacherRegistration) {
                     btnTakePhoto.setVisibility(View.GONE);
                     tvStatus.setVisibility(View.GONE);
+                    // 新增: 老师角色隐藏班级代碼输入框
+                    etClassCode.setVisibility(View.GONE);
                 }
             }
         });
@@ -78,18 +87,21 @@ public class RegistrationActivity extends AppCompatActivity {
             String studentNumber = etStudentNumber.getText().toString().trim();
             String studentName = etStudentName.getText().toString().trim();
             String password = etPassword.getText().toString().trim();
+            // 新增: 获取班级代碼
+            String classCode = etClassCode.getText().toString().trim();
 
             if (studentNumber.isEmpty() || studentName.isEmpty() || password.isEmpty()) {
                 Toast.makeText(this, "請填寫所有欄位", Toast.LENGTH_SHORT).show();
                 return;
             }
 
-            if (role.equals("student") && photoPath == null) {
-                Toast.makeText(this, "學生註冊需要先拍照", Toast.LENGTH_SHORT).show();
+            // 新增: 学生注册时，除了照片，也需要检查班级代碼是否为空
+            if (role.equals("student") && (photoPath == null || classCode.isEmpty())) {
+                Toast.makeText(this, "學生註冊需要先拍照並填寫班級代碼", Toast.LENGTH_SHORT).show();
                 return;
             }
 
-            register(role, studentNumber, studentName, password, photoPath);
+            register(role, studentNumber, studentName, password, classCode, photoPath);
         });
     }
 
@@ -107,7 +119,8 @@ public class RegistrationActivity extends AppCompatActivity {
         }
     }
 
-    private void register(String role, String studentNumber, String studentName, String password, String photoPath) {
+    // 修改: 添加了 classCode 参数
+    private void register(String role, String studentNumber, String studentName, String password, String classCode, String photoPath) {
         progressBar.setVisibility(View.VISIBLE);
         tvStatus.setText("正在註冊...");
         btnRegister.setEnabled(false);
@@ -120,11 +133,16 @@ public class RegistrationActivity extends AppCompatActivity {
                 .addFormDataPart("student_name", studentName)
                 .addFormDataPart("password", password);
 
-        if (role.equals("student") && photoPath != null) {
-            File photoFile = new File(photoPath);
-            requestBodyBuilder.addFormDataPart("photo", photoFile.getName(),
-                    RequestBody.create(photoFile, MediaType.parse("image/jpeg")));
+        // 新增: 将班级代碼添加到请求体中
+        if (role.equals("student")) {
+            requestBodyBuilder.addFormDataPart("class_code", classCode);
+            if (photoPath != null) {
+                File photoFile = new File(photoPath);
+                requestBodyBuilder.addFormDataPart("photo", photoFile.getName(),
+                        RequestBody.create(photoFile, MediaType.parse("image/jpeg")));
+            }
         }
+
 
         Request request = new Request.Builder()
                 .url(AppConstants.REGISTER_URL)
@@ -149,14 +167,14 @@ public class RegistrationActivity extends AppCompatActivity {
                     progressBar.setVisibility(View.GONE);
                     btnRegister.setEnabled(true);
 
-                    // 檢查響應是否成功，並確保響應體不為空
                     if (response.isSuccessful() && response.body() != null) {
                         try {
-                            // 將 responseBody 的聲明移動到這裡，確保它在成功的響應中被初始化
                             final String responseBody = response.body().string();
                             JSONObject jsonObject = new JSONObject(responseBody);
-                            boolean success = jsonObject.getBoolean("success");
-                            if (success) {
+                            String message = jsonObject.optString("message", "未知错误");
+
+                            // 检查后端的响应消息
+                            if (message.equals("註冊成功！")) {
                                 tvStatus.setText("註冊成功！正在跳轉...");
                                 tvStatus.setTextColor(getResources().getColor(android.R.color.holo_green_dark));
                                 Toast.makeText(RegistrationActivity.this, "註冊成功！", Toast.LENGTH_LONG).show();
@@ -166,8 +184,7 @@ public class RegistrationActivity extends AppCompatActivity {
                                 finish();
 
                             } else {
-                                String errorMessage = jsonObject.optString("message", "未知錯誤");
-                                tvStatus.setText("註冊失敗: " + errorMessage);
+                                tvStatus.setText("註冊失敗: " + message);
                                 tvStatus.setTextColor(getResources().getColor(android.R.color.holo_red_dark));
                             }
                         } catch (JSONException | IOException e) {
