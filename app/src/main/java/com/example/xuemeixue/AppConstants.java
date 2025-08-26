@@ -6,4 +6,5 @@ public class AppConstants {
     public static final String ATTENDANCE_URL = BASE_URL + "/attendance";
     public static final String CREATE_CLASS_URL = BASE_URL + "/classes/";
     public static final String REGISTER_URL = BASE_URL + "/register";
+    public static final String RECOGNIZE_URL = BASE_URL + "/recognize";
 }

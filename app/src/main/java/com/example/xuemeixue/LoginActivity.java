@@ -41,7 +41,6 @@ public class LoginActivity extends AppCompatActivity {
         etPassword = findViewById(R.id.etPassword);
         Button btnLogin = findViewById(R.id.btnLogin);
 
-        // 新增的注册按钮
         Button btnRegisterLink = findViewById(R.id.btnRegisterLink);
 
         roleGroup.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
@@ -76,7 +75,6 @@ public class LoginActivity extends AppCompatActivity {
                 OkHttpClient client = new OkHttpClient();
                 FormBody.Builder formBuilder = new FormBody.Builder();
 
-                // 學生和教師登入都只傳送 username 和 password
                 formBuilder.add("username", id)
                         .add("password", password);
 
@@ -101,12 +99,13 @@ public class LoginActivity extends AppCompatActivity {
                                 JSONObject jsonObject = new JSONObject(responseData);
                                 String message = jsonObject.optString("message", "登入失敗");
 
-                                // 檢查後端回傳的訊息是否為成功
                                 if (message.equals("登入成功")) {
                                     final String token = jsonObject.getString("token");
-                                    // 新增: 獲取班級代碼
-                                    final String classCode = jsonObject.optString("class_code", "");
                                     final String role = jsonObject.optString("role", "");
+                                    final String studentId = jsonObject.optString("student_number", "");
+                                    final String studentName = jsonObject.optString("student_name", "");
+                                    final String classCode = jsonObject.optString("class_code", "");
+                                    final int userId = jsonObject.optInt("id", -1);
 
                                     runOnUiThread(() -> {
                                         Toast.makeText(LoginActivity.this, "登入成功", Toast.LENGTH_SHORT).show();
@@ -115,16 +114,25 @@ public class LoginActivity extends AppCompatActivity {
                                         SharedPreferences.Editor editor = sharedPreferences.edit();
                                         editor.putBoolean("is_logged_in", true);
                                         editor.putString("role", role);
-                                        // 新增: 保存班級代碼到 SharedPreferences
+                                        editor.putString("id", studentId);
+                                        editor.putString("token", token);
+                                        editor.putString("student_name", studentName);
                                         editor.putString("class_code", classCode);
+                                        editor.putInt("user_id", userId);
                                         editor.apply();
 
-                                        // 修改: 將班級代碼傳遞給跳轉方法
-                                        saveLoginStatusAndJump(role, id, classCode);
+                                        // 修改: 跳轉到 AttendanceActivity 並傳遞學生資訊
+                                        Intent attendanceIntent = new Intent(LoginActivity.this, AttendanceActivity.class);
+                                        attendanceIntent.putExtra("studentId", studentId);
+                                        attendanceIntent.putExtra("studentName", studentName);
+                                        attendanceIntent.putExtra("classCode", classCode);
+                                        startActivity(attendanceIntent);
+                                        finish();
                                     });
                                 } else {
+                                    final String errorMessage = jsonObject.getString("message");
                                     runOnUiThread(() ->
-                                            Toast.makeText(LoginActivity.this, "登入失敗: " + message, Toast.LENGTH_SHORT).show()
+                                            Toast.makeText(LoginActivity.this, "登入失敗: " + errorMessage, Toast.LENGTH_SHORT).show()
                                     );
                                 }
                             } catch (JSONException e) {
@@ -143,23 +151,9 @@ public class LoginActivity extends AppCompatActivity {
             }
         });
 
-        // 为新添加的注册按钮设置点击事件
         btnRegisterLink.setOnClickListener(v -> {
             Intent intent = new Intent(LoginActivity.this, RegistrationActivity.class);
             startActivity(intent);
         });
-    }
-
-    // 新增: 接受班級代碼參數
-    private void saveLoginStatusAndJump(String role, String id, String classCode) {
-        Intent intent = new Intent(LoginActivity.this, ClassActivity.class);
-        intent.putExtra("isTeacher", role.equals("teacher"));
-        intent.putExtra("id", id);
-        // 新增: 傳遞班級代碼到下一個 Activity
-        if (role.equals("student")) {
-            intent.putExtra("class_code", classCode);
-        }
-        startActivity(intent);
-        finish();
     }
 }

@@ -39,6 +39,7 @@ public class AttendanceActivity extends AppCompatActivity {
     private ProgressBar progressBar;
 
     private String studentId;
+    private String studentName;
     private String classCode;
     private String photoPath;
 
@@ -56,17 +57,19 @@ public class AttendanceActivity extends AppCompatActivity {
         Intent intent = getIntent();
         if (intent != null) {
             studentId = intent.getStringExtra("studentId");
+            studentName = intent.getStringExtra("studentName");
             classCode = intent.getStringExtra("classCode");
-            String studentName = intent.getStringExtra("studentName"); // 假設你也從登入後端獲取了學生姓名
 
-            if (studentId != null && classCode != null && studentName != null) {
+            if (studentId != null && studentName != null && classCode != null) {
                 String info = "學號: " + studentId + "\n姓名: " + studentName + "\n班級代碼: " + classCode;
                 tvStudentInfo.setText(info);
+            } else {
+                tvStudentInfo.setText("使用者資訊讀取失敗");
             }
         }
 
         btnStartAttendance.setOnClickListener(v -> {
-            // 啟動相機進行人臉識別
+            // 點擊按鈕後，啟動相機 Activity
             Intent cameraIntent = new Intent(AttendanceActivity.this, RegistrationCameraActivity.class);
             startActivityForResult(cameraIntent, REQUEST_CODE_CAMERA);
         });
@@ -76,17 +79,18 @@ public class AttendanceActivity extends AppCompatActivity {
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == REQUEST_CODE_CAMERA && resultCode == RESULT_OK && data != null) {
+            // 從相機 Activity 獲取照片路徑
             photoPath = data.getStringExtra("photo_path");
             if (photoPath != null) {
                 // 如果照片拍攝成功，開始上傳並進行人臉識別
-                recognizeFaceAndMarkAttendance(photoPath);
+                recognizeFace(photoPath);
             } else {
                 Toast.makeText(this, "無法獲取照片路徑，請重試", Toast.LENGTH_SHORT).show();
             }
         }
     }
 
-    private void recognizeFaceAndMarkAttendance(String photoPath) {
+    private void recognizeFace(String photoPath) {
         progressBar.setVisibility(View.VISIBLE);
         tvAttendanceStatus.setText("正在進行人臉識別...");
         btnStartAttendance.setEnabled(false);
@@ -94,6 +98,7 @@ public class AttendanceActivity extends AppCompatActivity {
         OkHttpClient client = new OkHttpClient();
         File photoFile = new File(photoPath);
 
+        // 建立上傳請求，包含照片檔案和班級代碼
         MultipartBody requestBody = new MultipartBody.Builder()
                 .setType(MultipartBody.FORM)
                 .addFormDataPart("photo", photoFile.getName(),
@@ -102,7 +107,7 @@ public class AttendanceActivity extends AppCompatActivity {
                 .build();
 
         Request request = new Request.Builder()
-                .url(AppConstants.RECOGNIZE_URL) // 需要在 AppConstants 中添加一個新的後端 URL
+                .url(AppConstants.RECOGNIZE_URL)
                 .post(requestBody)
                 .build();
 
@@ -115,7 +120,7 @@ public class AttendanceActivity extends AppCompatActivity {
                     tvAttendanceStatus.setText("網絡請求失敗: " + e.getMessage());
                     tvAttendanceStatus.setTextColor(getResources().getColor(android.R.color.holo_red_dark));
                 });
-                Log.e(TAG, "Attendance failed: " + e.getMessage());
+                Log.e(TAG, "Recognition failed: " + e.getMessage());
             }
 
             @Override
@@ -129,6 +134,7 @@ public class AttendanceActivity extends AppCompatActivity {
                             String responseData = response.body().string();
                             JSONObject jsonObject = new JSONObject(responseData);
                             boolean recognized = jsonObject.getBoolean("recognized");
+                            String message = jsonObject.optString("message", "未知錯誤");
 
                             if (recognized) {
                                 // 成功識別，考勤成功
@@ -137,10 +143,9 @@ public class AttendanceActivity extends AppCompatActivity {
                                 Toast.makeText(AttendanceActivity.this, "考勤成功！", Toast.LENGTH_SHORT).show();
                             } else {
                                 // 未成功識別
-                                String errorMessage = jsonObject.optString("message", "人臉不匹配，考勤失敗。");
-                                tvAttendanceStatus.setText("考勤失敗: " + errorMessage);
+                                tvAttendanceStatus.setText("考勤失敗: " + message);
                                 tvAttendanceStatus.setTextColor(getResources().getColor(android.R.color.holo_red_dark));
-                                Toast.makeText(AttendanceActivity.this, "考勤失敗: " + errorMessage, Toast.LENGTH_SHORT).show();
+                                Toast.makeText(AttendanceActivity.this, "考勤失敗: " + message, Toast.LENGTH_SHORT).show();
                             }
                         } catch (JSONException | IOException e) {
                             tvAttendanceStatus.setText("解析響應失敗，後端回傳格式不正確。");
@@ -152,6 +157,11 @@ public class AttendanceActivity extends AppCompatActivity {
                         tvAttendanceStatus.setTextColor(getResources().getColor(android.R.color.holo_red_dark));
                     }
                 });
+                // 處理完畢後刪除臨時照片
+                File fileToDelete = new File(photoPath);
+                if (fileToDelete.exists()) {
+                    fileToDelete.delete();
+                }
             }
         });
     }
